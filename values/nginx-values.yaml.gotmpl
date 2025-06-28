@@ -5,7 +5,7 @@
 image:
   registry: docker.io
   repository: bitnami/nginx
-  tag: "{{ .Values.nginx.image.tag | default "1.25.3" }}"
+  tag: '{{ .Values.nginx.image.tag | default "1.25.3" }}'
   pullPolicy: IfNotPresent
 
 # Replica configuration
@@ -13,22 +13,22 @@ replicaCount: {{ .Values.nginx.replicaCount | default 1 }}
 
 # Service configuration
 service:
-  type: "{{ .Values.nginx.service.type | default "ClusterIP" }}"
+  type: '{{ .Values.nginx.service.type | default "ClusterIP" }}'
   ports:
     http: {{ .Values.nginx.service.port | default 80 }}
-  {{ if eq (.Values.nginx.service.type | default "ClusterIP") "NodePort" }}
+  {{- if eq (.Values.nginx.service.type | default "ClusterIP") "NodePort" }}
   nodePorts:
     http: ""
-  {{ end }}
+  {{- end }}
 
 # Resource limits and requests
 resources:
   requests:
-    memory: "{{ .Values.nginx.resources.requests.memory | default "64Mi" }}"
-    cpu: "{{ .Values.nginx.resources.requests.cpu | default "50m" }}"
+    memory: '{{ .Values.nginx.resources.requests.memory | default "64Mi" }}'
+    cpu: '{{ .Values.nginx.resources.requests.cpu | default "50m" }}'
   limits:
-    memory: "{{ .Values.nginx.resources.limits.memory | default "128Mi" }}"
-    cpu: "{{ .Values.nginx.resources.limits.cpu | default "100m" }}"
+    memory: '{{ .Values.nginx.resources.limits.memory | default "128Mi" }}'
+    cpu: '{{ .Values.nginx.resources.limits.cpu | default "100m" }}'
 
 # Pod Security Context
 podSecurityContext:
@@ -79,12 +79,12 @@ serverBlock: |
 # Labels and annotations
 commonLabels:
   app.kubernetes.io/name: nginx
-  app.kubernetes.io/instance: "{{ .Values.nginx.name }}"
-  app.kubernetes.io/version: "{{ .Values.nginx.image.tag }}"
+  app.kubernetes.io/instance: '{{ .Values.nginx.name }}'
+  app.kubernetes.io/version: '{{ .Values.nginx.image.tag }}'
   app.kubernetes.io/component: web
   app.kubernetes.io/part-of: umbrella-chart
-  environment: "{{ .Environment.Name }}"
+  environment: '{{ .Environment.Name }}'
 
 commonAnnotations:
-  helmfile.env: "{{ .Environment.Name }}"
-  helmfile.namespace: "{{ .Values.nginx.namespace }}"
+  helmfile.env: '{{ .Environment.Name }}'
+  helmfile.namespace: '{{ .Values.nginx.namespace }}'

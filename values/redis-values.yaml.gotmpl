@@ -7,30 +7,30 @@ architecture: standalone
 # Authentication
 auth:
   enabled: {{ .Values.redis.auth.enabled | default true }}
-  {{ if .Values.redis.auth.enabled }}
-  password: "{{ .Values.redis.auth.password | default "defaultpassword" }}"
-  {{ end }}
+  {{- if .Values.redis.auth.enabled }}
+  password: '{{ .Values.redis.auth.password | default "defaultpassword" }}'
+  {{- end }}
 
 # Master configuration
 master:
   # Resource configuration
   resources:
     requests:
-      memory: "{{ .Values.redis.resources.requests.memory | default "128Mi" }}"
-      cpu: "{{ .Values.redis.resources.requests.cpu | default "100m" }}"
+      memory: '{{ .Values.redis.resources.requests.memory | default "128Mi" }}'
+      cpu: '{{ .Values.redis.resources.requests.cpu | default "100m" }}'
     limits:
-      memory: "{{ .Values.redis.resources.limits.memory | default "256Mi" }}"
-      cpu: "{{ .Values.redis.resources.limits.cpu | default "200m" }}"
+      memory: '{{ .Values.redis.resources.limits.memory | default "256Mi" }}'
+      cpu: '{{ .Values.redis.resources.limits.cpu | default "200m" }}'
   
   # Persistence configuration
   persistence:
     enabled: {{ .Values.redis.persistence.enabled | default false }}
-    {{ if .Values.redis.persistence.enabled }}
-    size: "{{ .Values.redis.persistence.size | default "1Gi" }}"
-    {{ if .Values.redis.persistence.storageClass }}
-    storageClass: "{{ .Values.redis.persistence.storageClass }}"
-    {{ end }}
-    {{ end }}
+    {{- if .Values.redis.persistence.enabled }}
+    size: '{{ .Values.redis.persistence.size | default "1Gi" }}'
+    {{- if .Values.redis.persistence.storageClass }}
+    storageClass: '{{ .Values.redis.persistence.storageClass }}'
+    {{- end }}
+    {{- end }}
 
   # Service configuration
   service:
@@ -68,15 +68,15 @@ metrics:
 # Common labels
 commonLabels:
   app.kubernetes.io/name: redis
-  app.kubernetes.io/instance: "{{ .Values.redis.name }}"
+  app.kubernetes.io/instance: '{{ .Values.redis.name }}'
   app.kubernetes.io/component: cache
   app.kubernetes.io/part-of: umbrella-chart
-  environment: "{{ .Environment.Name }}"
+  environment: '{{ .Environment.Name }}'
 
 # Common annotations
 commonAnnotations:
-  helmfile.env: "{{ .Environment.Name }}"
-  helmfile.namespace: "{{ .Values.redis.namespace }}"
+  helmfile.env: '{{ .Environment.Name }}'
+  helmfile.namespace: '{{ .Values.redis.namespace }}'
 
 # Redis configuration
 redis:
@@ -85,13 +85,13 @@ redis:
     maxmemory 128mb
     maxmemory-policy allkeys-lru
     save ""
-    appendonly {{ if .Values.redis.persistence.enabled }}yes{{ else }}no{{ end }}
+    appendonly {{- if .Values.redis.persistence.enabled }}yes{{- else }}no{{- end }}
     
     # Log level for {{ .Environment.Name }} environment
-    {{ if eq .Environment.Name "development" }}
+    {{- if eq .Environment.Name "development" }}
     loglevel debug
-    {{ else if eq .Environment.Name "production" }}
+    {{- else if eq .Environment.Name "production" }}
     loglevel warning
-    {{ else }}
+    {{- else }}
     loglevel notice
-    {{ end }}
+    {{- end }}
