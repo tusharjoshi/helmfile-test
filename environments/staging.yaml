@@ -1,0 +1,47 @@
+# Staging Environment Configuration
+# Override values for staging environment
+
+# Global settings
+namespace: "staging"
+
+# NGINX Configuration
+nginx:
+  name: "nginx-web-staging"
+  namespace: "web-staging"
+  image:
+    tag: "1.25.3"
+  service:
+    type: "LoadBalancer"
+    port: 80
+  replicaCount: 2
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# Redis Configuration
+redis:
+  name: "redis-cache-staging"
+  namespace: "cache-staging"
+  auth:
+    enabled: true
+    password: "stagingpassword"
+  persistence:
+    enabled: true
+    size: "1Gi"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "400m"
+
+# Ingress Configuration
+ingress:
+  enabled: true
+  name: "ingress-nginx-staging"
+  namespace: "ingress-nginx"

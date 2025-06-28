@@ -1,0 +1,93 @@
+# NGINX Ingress Controller Values Template
+# This file uses Go template syntax for dynamic value generation
+
+# Controller configuration
+controller:
+  # Image configuration
+  image:
+    registry: registry.k8s.io
+    image: ingress-nginx/controller
+    tag: "v1.8.4"
+    pullPolicy: IfNotPresent
+
+  # Replica configuration
+  replicaCount: {{ if eq .Environment.Name "production" }}3{{ else if eq .Environment.Name "staging" }}2{{ else }}1{{ end }}
+
+  # Service configuration
+  service:
+    type: {{ if eq .Environment.Name "development" }}NodePort{{ else }}LoadBalancer{{ end }}
+    ports:
+      http: 80
+      https: 443
+    {{ if eq .Environment.Name "development" }}
+    nodePorts:
+      http: 30080
+      https: 30443
+    {{ end }}
+
+  # Resource configuration
+  resources:
+    requests:
+      cpu: {{ if eq .Environment.Name "production" }}200m{{ else }}100m{{ end }}
+      memory: {{ if eq .Environment.Name "production" }}256Mi{{ else }}128Mi{{ end }}
+    limits:
+      cpu: {{ if eq .Environment.Name "production" }}500m{{ else }}200m{{ end }}
+      memory: {{ if eq .Environment.Name "production" }}512Mi{{ else }}256Mi{{ end }}
+
+  # Configuration
+  config:
+    # Custom error pages
+    custom-http-errors: "404,503"
+    # SSL configuration
+    ssl-protocols: "TLSv1.2 TLSv1.3"
+    # Proxy configuration
+    proxy-body-size: "64m"
+    proxy-read-timeout: "60"
+    proxy-send-timeout: "60"
+    # Environment specific configs
+    {{ if eq .Environment.Name "development" }}
+    enable-real-ip: "false"
+    {{ else }}
+    enable-real-ip: "true"
+    {{ end }}
+
+  # Metrics
+  metrics:
+    enabled: {{ if eq .Environment.Name "production" }}true{{ else }}false{{ end }}
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "10254"
+
+  # Pod Disruption Budget
+  podDisruptionBudget:
+    enabled: {{ if eq .Environment.Name "production" }}true{{ else }}false{{ end }}
+    {{ if eq .Environment.Name "production" }}
+    minAvailable: 1
+    {{ end }}
+
+  # Autoscaling
+  autoscaling:
+    enabled: {{ if eq .Environment.Name "production" }}true{{ else }}false{{ end }}
+    {{ if eq .Environment.Name "production" }}
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+    {{ end }}
+
+# Default backend (optional)
+defaultBackend:
+  enabled: true
+  image:
+    registry: registry.k8s.io
+    image: defaultbackend-amd64
+    tag: "1.5"
+
+# Common labels
+commonLabels:
+  app.kubernetes.io/name: ingress-nginx
+  app.kubernetes.io/instance: "{{ .Values.ingress.name }}"
+  app.kubernetes.io/component: controller
+  app.kubernetes.io/part-of: umbrella-chart
+  environment: "{{ .Environment.Name }}"

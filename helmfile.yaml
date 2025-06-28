@@ -1,0 +1,104 @@
+---
+# Helmfile - Umbrella Chart Example
+# This demonstrates deploying multiple helm charts with configurable values
+
+# Repository definitions
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+  - name: ingress-nginx
+    url: https://kubernetes.github.io/ingress-nginx
+
+# Environment configurations
+environments:
+  default:
+    values:
+      - environments/default.yaml
+  development:
+    values:
+      - environments/development.yaml
+  staging:
+    values:
+      - environments/staging.yaml
+  production:
+    values:
+      - environments/production.yaml
+
+# Helmfile template configurations
+templates:
+  default: &default
+    namespace: "{{ .Values.namespace | default \"default\" }}"
+    createNamespace: true
+    wait: true
+    timeout: 600
+    cleanupOnFail: true
+    force: false
+
+# Release definitions
+releases:
+  # NGINX Web Server
+  - name: "{{ .Values.nginx.name | default \"nginx-web\" }}"
+    <<: *default
+    chart: bitnami/nginx
+    version: "{{ .Values.nginx.chart.version | default \"15.14.2\" }}"
+    namespace: "{{ .Values.nginx.namespace | default .Values.namespace | default \"web\" }}"
+    values:
+      - values/nginx-values.yaml.gotmpl
+    set:
+      - name: image.tag
+        value: "{{ .Values.nginx.image.tag | default \"1.25.3\" }}"
+      - name: service.type
+        value: "{{ .Values.nginx.service.type | default \"ClusterIP\" }}"
+      - name: service.ports.http
+        value: "{{ .Values.nginx.service.port | default 80 }}"
+    labels:
+      app: nginx
+      tier: frontend
+      environment: "{{ .Environment.Name }}"
+
+  # Redis Cache
+  - name: "{{ .Values.redis.name | default \"redis-cache\" }}"
+    <<: *default
+    chart: bitnami/redis
+    version: "{{ .Values.redis.chart.version | default \"18.19.4\" }}"
+    namespace: "{{ .Values.redis.namespace | default .Values.namespace | default \"cache\" }}"
+    values:
+      - values/redis-values.yaml.gotmpl
+    set:
+      - name: auth.enabled
+        value: "{{ .Values.redis.auth.enabled | default true }}"
+      - name: auth.password
+        value: "{{ .Values.redis.auth.password | default \"defaultpassword\" }}"
+      - name: master.persistence.enabled
+        value: "{{ .Values.redis.persistence.enabled | default false }}"
+    labels:
+      app: redis
+      tier: cache
+      environment: "{{ .Environment.Name }}"
+
+  # Optional: NGINX Ingress Controller (only deploy if enabled)
+  {{ if .Values.ingress.enabled | default false }}
+  - name: "{{ .Values.ingress.name | default \"ingress-nginx\" }}"
+    <<: *default
+    chart: ingress-nginx/ingress-nginx
+    version: "{{ .Values.ingress.chart.version | default \"4.8.3\" }}"
+    namespace: "{{ .Values.ingress.namespace | default \"ingress-nginx\" }}"
+    values:
+      - values/ingress-values.yaml.gotmpl
+    labels:
+      app: ingress-nginx
+      tier: ingress
+      environment: "{{ .Environment.Name }}"
+  {{ end }}
+
+# Hooks for lifecycle management
+hooks:
+  - events: ["presync"]
+    showlogs: true
+    command: "echo"
+    args: ["Pre-sync: Deploying to {{ .Environment.Name }} environment"]
+  
+  - events: ["postsync"]
+    showlogs: true
+    command: "echo"
+    args: ["Post-sync: Deployment to {{ .Environment.Name }} completed successfully"]

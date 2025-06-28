@@ -1,0 +1,97 @@
+# Redis Helm Chart Values Template
+# This file uses Go template syntax for dynamic value generation
+
+# Architecture configuration
+architecture: standalone
+
+# Authentication
+auth:
+  enabled: {{ .Values.redis.auth.enabled | default true }}
+  {{ if .Values.redis.auth.enabled }}
+  password: "{{ .Values.redis.auth.password | default "defaultpassword" }}"
+  {{ end }}
+
+# Master configuration
+master:
+  # Resource configuration
+  resources:
+    requests:
+      memory: "{{ .Values.redis.resources.requests.memory | default "128Mi" }}"
+      cpu: "{{ .Values.redis.resources.requests.cpu | default "100m" }}"
+    limits:
+      memory: "{{ .Values.redis.resources.limits.memory | default "256Mi" }}"
+      cpu: "{{ .Values.redis.resources.limits.cpu | default "200m" }}"
+  
+  # Persistence configuration
+  persistence:
+    enabled: {{ .Values.redis.persistence.enabled | default false }}
+    {{ if .Values.redis.persistence.enabled }}
+    size: "{{ .Values.redis.persistence.size | default "1Gi" }}"
+    {{ if .Values.redis.persistence.storageClass }}
+    storageClass: "{{ .Values.redis.persistence.storageClass }}"
+    {{ end }}
+    {{ end }}
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    ports:
+      redis: 6379
+
+  # Pod Security Context
+  podSecurityContext:
+    fsGroup: 1001
+
+  # Container Security Context
+  containerSecurityContext:
+    runAsUser: 1001
+    runAsNonRoot: true
+
+# Network Policy
+networkPolicy:
+  enabled: false
+
+# Service Account
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+
+# Pod Disruption Budget
+pdb:
+  create: false
+
+# Metrics configuration
+metrics:
+  enabled: false
+
+# Common labels
+commonLabels:
+  app.kubernetes.io/name: redis
+  app.kubernetes.io/instance: "{{ .Values.redis.name }}"
+  app.kubernetes.io/component: cache
+  app.kubernetes.io/part-of: umbrella-chart
+  environment: "{{ .Environment.Name }}"
+
+# Common annotations
+commonAnnotations:
+  helmfile.env: "{{ .Environment.Name }}"
+  helmfile.namespace: "{{ .Values.redis.namespace }}"
+
+# Redis configuration
+redis:
+  configmap: |
+    # Redis configuration
+    maxmemory 128mb
+    maxmemory-policy allkeys-lru
+    save ""
+    appendonly {{ if .Values.redis.persistence.enabled }}yes{{ else }}no{{ end }}
+    
+    # Log level for {{ .Environment.Name }} environment
+    {{ if eq .Environment.Name "development" }}
+    loglevel debug
+    {{ else if eq .Environment.Name "production" }}
+    loglevel warning
+    {{ else }}
+    loglevel notice
+    {{ end }}
